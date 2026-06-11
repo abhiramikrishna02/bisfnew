@@ -1,7 +1,7 @@
 "use client";
 
 // ─── Fourth Section: Process / How It Works ───────────────────────────────────
-// Background: 3D gold dollar signs falling/tumbling across the screen (Three.js).
+// Background: 3D green dollar signs falling/tumbling across the screen (Three.js).
 // Foreground: Timeline content centered, fully readable above the animation.
 
 import { useEffect, useRef } from "react";
@@ -29,13 +29,10 @@ const STEPS = [
 ];
 
 // ─── Build extruded dollar sign geometry ──────────────────────────────────────
-// We construct the "$" shape from a THREE.Shape path, then extrude it.
 function createDollarShape() {
   const shape = new THREE.Shape();
 
   // Outer S-curve of the dollar sign (simplified, readable at small scale)
-  // We'll use a series of curves + lines to approximate the $ glyph
-  // Top arc of S (upper bowl)
   shape.moveTo(0.28, 0.55);
   shape.bezierCurveTo(0.60, 0.55,  0.75, 0.35,  0.75, 0.18);
   shape.bezierCurveTo(0.75, 0.02,  0.60,-0.08,  0.28,-0.10);
@@ -45,7 +42,7 @@ function createDollarShape() {
   shape.bezierCurveTo(-0.75,-0.55, -0.60,-0.70, -0.28,-0.70);
   // Bottom arc close
   shape.bezierCurveTo(0.60,-0.70,  0.75,-0.50,  0.75,-0.38);
-  // Back up (outer shape — we'll subtract inner holes manually via extrude)
+  // Back up
   shape.lineTo(0.42, -0.38);
   shape.bezierCurveTo(0.42,-0.48,  0.28,-0.52, -0.10,-0.52);
   shape.bezierCurveTo(-0.42,-0.52, -0.55,-0.42, -0.55,-0.36);
@@ -74,7 +71,7 @@ function useDollarRain(mountRef) {
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(W, H);
-    renderer.setClearColor(0x000000, 0); // Transparent — section bg shows
+    renderer.setClearColor(0x000000, 0); 
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.6;
     mount.appendChild(renderer.domElement);
@@ -84,39 +81,37 @@ function useDollarRain(mountRef) {
     const camera = new THREE.PerspectiveCamera(55, W / H, 0.1, 60);
     camera.position.set(0, 0, 14);
 
-    // ── Lighting — warm gold studio look ────────────────────────────────────
-    // Ambient — warm dim base so shadow sides are dark amber, not black
-    scene.add(new THREE.AmbientLight(0x1a0d00, 1.2));
+    // ── Lighting — adjusted for rich green visuals ──────────────────────────
+    // Ambient — subtle dark green base
+    scene.add(new THREE.AmbientLight(0x021108, 1.2));
 
-    // Primary key — bright warm-white from upper left (creates the gold sheen)
-    const key = new THREE.DirectionalLight(0xffd97a, 22);
+    // Primary key — bright neutral white from upper left
+    const key = new THREE.DirectionalLight(0xffffff, 22);
     key.position.set(-5, 8, 6);
     scene.add(key);
 
-    // Secondary key — slightly cooler highlight from upper right
-    const key2 = new THREE.DirectionalLight(0xffe4a0, 14);
+    // Secondary key — slight minty cool highlight from upper right
+    const key2 = new THREE.DirectionalLight(0xa7f3d0, 14);
     key2.position.set(7, 5, 5);
     scene.add(key2);
 
-    // Warm rim backlight — gives the dark gold edge glow
-    const rim = new THREE.DirectionalLight(0xc05a00, 18);
+    // Rim backlight — gives a deep emerald edge glow
+    const rim = new THREE.DirectionalLight(0x059669, 18);
     rim.position.set(0, -4, -7);
     scene.add(rim);
 
-    // Subtle warm fill from below
-    const fill = new THREE.DirectionalLight(0xb07020, 6);
+    // Subtle dark green fill from below
+    const fill = new THREE.DirectionalLight(0x064e3b, 6);
     fill.position.set(0, -8, 3);
     scene.add(fill);
 
-    // ── Gold Material ────────────────────────────────────────────────────────
-    // Dark warm gold — matches reference: rich amber-brown in shadows,
-    // bright gold-yellow on specular highlights
-    const goldMat = new THREE.MeshPhysicalMaterial({
-      color:              new THREE.Color(0x9a6200),  // Deep amber-gold base
-      emissive:           new THREE.Color(0x3d1f00),  // Warm glow in dark areas
+    // ── Green Material ───────────────────────────────────────────────────────
+    const greenMat = new THREE.MeshPhysicalMaterial({
+      color:              new THREE.Color(0x0f763e),  // Deep emerald/money green base
+      emissive:           new THREE.Color(0x042412),  // Dark green inner glow
       emissiveIntensity:  0.35,
-      metalness:          0.85,   // Metallic for clean specular
-      roughness:          0.28,   // Slightly rough = warm matte-gold look
+      metalness:          0.85,   
+      roughness:          0.28,   
       clearcoat:          0.6,
       clearcoatRoughness: 0.3,
       reflectivity:       0.9,
@@ -125,7 +120,6 @@ function useDollarRain(mountRef) {
     // ── Dollar Sign Geometry ─────────────────────────────────────────────────
     const dollarShape = createDollarShape();
 
-    // Vertical stroke (the | line through the $)
     const strokeShape = new THREE.Shape();
     strokeShape.moveTo(-0.07, -1.0);
     strokeShape.lineTo( 0.07, -1.0);
@@ -144,7 +138,6 @@ function useDollarRain(mountRef) {
     const dollarGeo = new THREE.ExtrudeGeometry(dollarShape, extrudeSettings);
     const strokeGeo = new THREE.ExtrudeGeometry(strokeShape, extrudeSettings);
 
-    // Center both geometries independently — no manual merge needed
     dollarGeo.center();
     strokeGeo.center();
 
@@ -152,40 +145,34 @@ function useDollarRain(mountRef) {
     const COUNT = 38;
     const symbols = [];
 
-    // Calculate visible bounds from camera FOV
     const vFOV  = (camera.fov * Math.PI) / 180;
     const vH    = 2 * Math.tan(vFOV / 2) * camera.position.z;
     const vW    = vH * (W / H);
 
     const SPAWN_W = vW  * 0.6;
     const SPAWN_H = vH  * 0.7;
-    const DEPTH_RANGE = 10; // Z spread for depth-of-field feel
+    const DEPTH_RANGE = 10; 
 
     for (let i = 0; i < COUNT; i++) {
-      // Use a Group with two child meshes — avoids any index merging entirely
       const group = new THREE.Group();
-      group.add(new THREE.Mesh(dollarGeo, goldMat));
-      group.add(new THREE.Mesh(strokeGeo, goldMat));
+      group.add(new THREE.Mesh(dollarGeo, greenMat));
+      group.add(new THREE.Mesh(strokeGeo, greenMat));
 
-      // Random uniform scale — variety in "near" vs "far" coins
       const s = 0.20 + Math.random() * 0.55;
       group.scale.setScalar(s);
 
-      // Random position spread across the viewport
       group.position.set(
         (Math.random() - 0.5) * SPAWN_W,
-        (Math.random() - 0.5) * SPAWN_H + SPAWN_H * 0.5, // Start above center
+        (Math.random() - 0.5) * SPAWN_H + SPAWN_H * 0.5, 
         (Math.random() - 0.5) * DEPTH_RANGE
       );
 
-      // Random initial rotation
       group.rotation.set(
         Math.random() * Math.PI * 2,
         Math.random() * Math.PI * 2,
         Math.random() * Math.PI * 2
       );
 
-      // Per-symbol animation data
       group.userData = {
         fallSpeed:  0.012 + Math.random() * 0.022,
         tumbleX:    (Math.random() - 0.5) * 0.022,
@@ -213,18 +200,13 @@ function useDollarRain(mountRef) {
       symbols.forEach((mesh) => {
         const d = mesh.userData;
 
-        // Fall downward
         mesh.position.y -= d.fallSpeed;
-
-        // Sinusoidal horizontal drift (lazy sway)
         mesh.position.x += d.driftX + Math.sin(t * 0.4 + d.phase) * 0.003;
 
-        // Local tumble on all axes
         mesh.rotation.x += d.tumbleX;
         mesh.rotation.y += d.tumbleY;
         mesh.rotation.z += d.tumbleZ;
 
-        // Recycle when off-screen bottom — respawn at top
         if (mesh.position.y < d.resetY) {
           mesh.position.y = d.spawnY;
           mesh.position.x = d.resetX;
@@ -253,7 +235,7 @@ function useDollarRain(mountRef) {
       ro.disconnect();
       dollarGeo.dispose();
       strokeGeo.dispose();
-      goldMat.dispose();
+      greenMat.dispose();
       renderer.dispose();
       if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
     };
@@ -282,7 +264,6 @@ export default function FourthSection() {
           overflow: hidden;
         }
 
-        /* Three.js canvas fills the entire section background */
         #process-canvas {
           position: absolute;
           inset: 0;
@@ -292,7 +273,6 @@ export default function FourthSection() {
           pointer-events: none;
         }
 
-        /* Dark vignette overlay — dials back the 3D so text stays legible */
         #process::before {
           content: '';
           position: absolute;
@@ -304,7 +284,6 @@ export default function FourthSection() {
           pointer-events: none;
         }
 
-        /* Content lives above canvas + vignette */
         #process-inner {
           position: relative;
           z-index: 2;
@@ -316,7 +295,6 @@ export default function FourthSection() {
           flex-direction: column;
         }
 
-        /* ── Eyebrow ─────────────────────────────────────── */
         .ps-eyebrow {
           font-family: 'Inter', sans-serif;
           font-size: 10.5px;
@@ -338,7 +316,6 @@ export default function FourthSection() {
           flex-shrink: 0;
         }
 
-        /* ── Headline ─────────────────────────────────────── */
         .ps-h2 {
           font-family: 'Syne', sans-serif;
           font-weight: 800;
@@ -354,7 +331,6 @@ export default function FourthSection() {
           margin-top: 0.15em;
         }
 
-        /* ── Timeline ─────────────────────────────────────── */
         .ps-timeline {
           display: flex;
           flex-direction: column;
@@ -409,7 +385,6 @@ export default function FourthSection() {
           margin: 0;
         }
 
-        /* ── Gold shimmer rule below headline ─────────────── */
         .ps-rule {
           width: 48px;
           height: 2px;

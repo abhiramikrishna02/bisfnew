@@ -1,16 +1,19 @@
+// Home.jsx
+
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
 
 // ─── Section imports ───────────────────────────────────────────────────────────
-import Hero,          { makeFragments, HERO_CFG } from "./Hero";
-import SecondSection  from "./SecondSection";
-import ThirdSection   from "./ThirdSection";
-import FourthSection  from "./FourthSection";
-import FinalSection   from "./FinalSection";
+import Hero,         { HERO_CFG } from "./Hero";
+import SecondSection from "./SecondSection";
+import ThirdSection  from "./ThirdSection";
+import FourthSection from "./FourthSection";
+import FinalSection  from "./FinalSection";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const ASSEMBLY_TICKS = 8;
+// ✅ FIX 1: Reduced from 8 → 2 so only 2 scroll steps are needed to leave the hero
+const ASSEMBLY_TICKS = 2;
 
 const NAV_DOTS   = ["hero", "services", "impact", "process", "contact"];
 const DOT_COLORS = ["#00f5ff", "#818cf8", "#34d399", "#f9a8d4", "#ff2ebe"];
@@ -27,47 +30,21 @@ export default function Home() {
   const [, forceRender] = useState(0);
 
   // Animation values — refs so RAF loop reads without stale closures
-  const assembleProgress = useRef(0); // 0 = idle drift, 1 = fully assembled
-  const zoomProgress     = useRef(0); // 0 = normal,    1 = zoomed through (black fills screen)
+  const assembleProgress = useRef(0);
+  const zoomProgress     = useRef(0);
   const assembleTarget   = useRef(0);
   const zoomTarget       = useRef(0);
   const internalTick     = useRef(0); // current scroll step (0–ASSEMBLY_TICKS)
   const isTransitioning  = useRef(false);
 
-  // Canvas + fragments owned here so Home can reset them on back-navigation
-  const canvasRef  = useRef(null);
-  const fragsRef   = useRef([]);
+  // Kept for Hero prop API compatibility (Hero no longer uses them)
+  const canvasRef = useRef(null);
+  const fragsRef  = useRef([]);
 
   // Scroll intercept accumulators
   const scrollAccum = useRef(0);
   const lastScroll  = useRef(0);
   const touchStart  = useRef(null);
-
-  // ── Canvas resize ────────────────────────────────────────────────────────
-  useEffect(() => {
-    const resize = () => {
-      const c = canvasRef.current;
-      if (c) {
-        c.width  = window.innerWidth;
-        c.height = window.innerHeight;
-        // Re-seed fragments on resize so they fill the new dimensions
-        if (assembleProgress.current < 0.005) {
-          fragsRef.current = makeFragments(c.width, c.height);
-        }
-      }
-    };
-    resize();
-    window.addEventListener("resize", resize);
-    return () => window.removeEventListener("resize", resize);
-  }, []);
-
-  // ── Initialise fragments once canvas is ready ────────────────────────────
-  useEffect(() => {
-    const c = canvasRef.current;
-    if (c && fragsRef.current.length === 0) {
-      fragsRef.current = makeFragments(c.width, c.height);
-    }
-  }, []);
 
   // ── Smooth interpolation loop for assembly / zoom values ─────────────────
   useEffect(() => {
@@ -75,7 +52,6 @@ export default function Home() {
     function tick() {
       const aD = assembleTarget.current - assembleProgress.current;
       const zD = zoomTarget.current     - zoomProgress.current;
-      // Hard-snap to zero so idle drift activates cleanly
       if (assembleTarget.current === 0 && Math.abs(assembleProgress.current) < 0.003) {
         assembleProgress.current = 0;
       } else if (Math.abs(aD) > 0.0005) {
@@ -90,7 +66,7 @@ export default function Home() {
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  // ── FORWARD: hero → services (portal zoom-through) ───────────────────────
+  // ── FORWARD: hero → services ──────────────────────────────────────────────
   const doForwardTransition = useCallback(() => {
     if (isTransitioning.current) return;
     isTransitioning.current = true;
@@ -99,7 +75,6 @@ export default function Home() {
     zoomTarget.current = 1;
 
     setTimeout(() => {
-      // Reset animation state
       zoomProgress.current     = 0;
       zoomTarget.current       = 0;
       assembleProgress.current = 0;
@@ -109,9 +84,11 @@ export default function Home() {
       setPhase("scrollable");
       setActiveSection("services");
 
+      // ✅ FIX 2: No teleport jump — just make sections visible and let the
+      // browser scroll naturally. We reset to top-of-page so the user scrolls
+      // down into #services the normal way, no jarring position warp.
       requestAnimationFrame(() => {
-        const el = document.getElementById("services");
-        if (el) window.scrollTo({ top: el.offsetTop, behavior: "instant" });
+        window.scrollTo({ top: 0, behavior: "instant" });
         setTimeout(() => {
           isTransitioning.current = false;
           setContentVisible(true);
@@ -120,7 +97,7 @@ export default function Home() {
     }, 520);
   }, []);
 
-  // ── BACK: services → hero (instant cut — black flash, no portal) ─────────
+  // ── BACK: services → hero ─────────────────────────────────────────────────
   const doBackToHero = useCallback(() => {
     if (isTransitioning.current) return;
     isTransitioning.current = true;
@@ -128,16 +105,11 @@ export default function Home() {
     setPhase("back-flash");
 
     setTimeout(() => {
-      // Full reset to idle state
       assembleProgress.current = 0;
       assembleTarget.current   = 0;
       zoomProgress.current     = 0;
       zoomTarget.current       = 0;
       internalTick.current     = 0;
-
-      // Re-seed fresh fragments spread across the canvas
-      const c = canvasRef.current;
-      if (c) fragsRef.current = makeFragments(c.width, c.height);
 
       window.scrollTo({ top: 0, behavior: "instant" });
       setPhase("hero");
@@ -290,7 +262,7 @@ export default function Home() {
         transition: "opacity 0.18s ease",
       }} />
 
-      {/* ── HERO (canvas + text + scroll hint) ── */}
+      {/* ── HERO (Prism background + text + scroll hint) ── */}
       <Hero
         canvasRef={canvasRef}
         fragsRef={fragsRef}
@@ -303,7 +275,6 @@ export default function Home() {
       />
 
       {/* ── SCROLLABLE SECTIONS ── */}
-      {/* Hidden (but in DOM) while on hero so section IDs stay accessible */}
       <div style={{
         background: "#03030a",
         minHeight: "100vh",
