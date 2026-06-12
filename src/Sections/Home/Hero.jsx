@@ -40,7 +40,7 @@ function HeroContent({ color, visible }) {
         {/* ── TAGLINE ── */}
         <p style={S.body}>
           A Full-Stack Startup Facilitator –{" "}
-          Building India's Next Generation of Entrepreneurs.
+          Building India&apos;s Next Generation of Entrepreneurs.
         </p>
 
       </div>
@@ -121,22 +121,24 @@ export default function Hero({
       >
         {/* ── Prism WebGL Background ── */}
         <div style={{ position: "absolute", inset: 0, zIndex: 0 }} aria-hidden="true">
-          <div style={{ position: "absolute", inset: 0 }}>
-            <Prism
-              animationType="rotate"
-              timeScale={0.45}
-              height={3.5}
-              baseWidth={5.5}
-              scale={3.6}
-              hueShift={0}
-              colorFrequency={1}
-              noise={0.4}
-              glow={1.1}
-              bloom={1}
-              transparent={true}
-              suspendWhenOffscreen={true}
-            />
-          </div>
+          {engineEnabled && (
+            <div style={{ position: "absolute", inset: 0 }}>
+              <Prism
+                animationType="rotate"
+                timeScale={0.45}
+                height={3.5}
+                baseWidth={5.5}
+                scale={3.6}
+                hueShift={0}
+                colorFrequency={1}
+                noise={0.4}
+                glow={1.1}
+                bloom={1}
+                transparent={true}
+                suspendWhenOffscreen={true}
+              />
+            </div>
+          )}
 
           {/* Dark vignette */}
           <div

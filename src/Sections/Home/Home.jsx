@@ -38,6 +38,8 @@ export default function Home() {
   const scrollAccum = useRef(0);
   const lastScroll  = useRef(0);
   const touchStart  = useRef(null);
+  const forwardTransitionTimer = useRef(null);
+  const backTransitionTimer = useRef(null);
 
   // ── Smooth interpolation loop ─────────────────────────────────────────────
   useEffect(() => {
@@ -67,6 +69,11 @@ export default function Home() {
     setContentVisible(false);
     zoomTarget.current = 1;
 
+    if (forwardTransitionTimer.current) {
+      clearTimeout(forwardTransitionTimer.current);
+      forwardTransitionTimer.current = null;
+    }
+
     setTimeout(() => {
       zoomProgress.current     = 0;
       zoomTarget.current       = 0;
@@ -78,7 +85,7 @@ export default function Home() {
       setActiveSection("services");
 
       requestAnimationFrame(() => {
-        window.scrollTo({ top: 0, behavior: "instant" });
+        window.scrollTo({ top: 0, behavior: "auto" });
         setTimeout(() => {
           isTransitioning.current = false;
           setContentVisible(true);
@@ -92,6 +99,11 @@ export default function Home() {
     if (isTransitioning.current) return;
     isTransitioning.current = true;
 
+    if (forwardTransitionTimer.current) {
+      clearTimeout(forwardTransitionTimer.current);
+      forwardTransitionTimer.current = null;
+    }
+
     setPhase("back-flash");
 
     setTimeout(() => {
@@ -101,7 +113,7 @@ export default function Home() {
       zoomTarget.current       = 0;
       internalTick.current     = 0;
 
-      window.scrollTo({ top: 0, behavior: "instant" });
+      window.scrollTo({ top: 0, behavior: "auto" });
       setPhase("hero");
       setActiveSection("hero");
       setContentVisible(true);
@@ -122,10 +134,19 @@ export default function Home() {
         assembleTarget.current = internalTick.current / ASSEMBLY_TICKS;
         forceRender(n => n + 1);
         if (internalTick.current === ASSEMBLY_TICKS) {
-          setTimeout(doForwardTransition, 300);
+          if (!forwardTransitionTimer.current) {
+            forwardTransitionTimer.current = setTimeout(() => {
+              forwardTransitionTimer.current = null;
+              doForwardTransition();
+            }, 220);
+          }
         }
       }
     } else {
+      if (forwardTransitionTimer.current) {
+        clearTimeout(forwardTransitionTimer.current);
+        forwardTransitionTimer.current = null;
+      }
       if (internalTick.current > 0) {
         internalTick.current--;
         assembleTarget.current = internalTick.current / ASSEMBLY_TICKS;
@@ -142,7 +163,17 @@ export default function Home() {
 
   // ── Event listeners ───────────────────────────────────────────────────────
   useEffect(() => {
-    const THRESH = 50;
+    const THRESH = 18;
+
+    const normalizeWheelDelta = (e) => {
+      let delta = e.deltaY;
+      if (e.deltaMode === 1) delta *= 16;
+      else if (e.deltaMode === 2) delta *= window.innerHeight || 800;
+      return delta;
+    };
+
+    const isAtTop = () =>
+      (window.scrollY || document.documentElement.scrollTop || 0) <= 2;
 
     const onWheel = (e) => {
       if (isTransitioning.current) { e.preventDefault(); return; }
@@ -150,21 +181,30 @@ export default function Home() {
       if (phase === "hero" || phase === "forward-transition") {
         e.preventDefault();
         const now = Date.now();
-        if (now - lastScroll.current > 700) scrollAccum.current = 0;
+        if (now - lastScroll.current > 300) scrollAccum.current = 0;
         lastScroll.current = now;
-        scrollAccum.current += e.deltaY;
-        if      (scrollAccum.current >  THRESH) { scrollAccum.current = 0; handleHeroScroll(1);  }
-        else if (scrollAccum.current < -THRESH) { scrollAccum.current = 0; handleHeroScroll(-1); }
+        scrollAccum.current += normalizeWheelDelta(e);
+        while (scrollAccum.current > THRESH) {
+          scrollAccum.current -= THRESH;
+          handleHeroScroll(1);
+        }
+        while (scrollAccum.current < -THRESH) {
+          scrollAccum.current += THRESH;
+          handleHeroScroll(-1);
+        }
         return;
       }
 
-      if (phase === "scrollable" && e.deltaY < 0 && window.scrollY < 10) {
+      if (phase === "scrollable" && e.deltaY < 0 && isAtTop()) {
         e.preventDefault();
         const now = Date.now();
-        if (now - lastScroll.current > 700) scrollAccum.current = 0;
+        if (now - lastScroll.current > 300) scrollAccum.current = 0;
         lastScroll.current = now;
-        scrollAccum.current += e.deltaY;
-        if (scrollAccum.current < -THRESH) { scrollAccum.current = 0; handleServicesUp(); }
+        scrollAccum.current += normalizeWheelDelta(e);
+        while (scrollAccum.current < -THRESH) {
+          scrollAccum.current += THRESH;
+          handleServicesUp();
+        }
         return;
       }
 
@@ -172,19 +212,19 @@ export default function Home() {
     };
 
     const onTouchStart = (e) => {
-      if (phase === "hero" || (phase === "scrollable" && window.scrollY < 10)) {
+      if (phase === "hero" || (phase === "scrollable" && isAtTop())) {
         touchStart.current = e.touches[0].clientY;
       }
     };
     const onTouchEnd = (e) => {
       if (touchStart.current === null || isTransitioning.current) return;
       const dy = touchStart.current - e.changedTouches[0].clientY;
-      if (Math.abs(dy) > 40) {
-        if (phase === "hero")
-          handleHeroScroll(dy > 0 ? 1 : -1);
-        else if (phase === "scrollable" && dy < 0 && window.scrollY < 10)
-          handleServicesUp();
-      }
+        if (Math.abs(dy) > 24) {
+          if (phase === "hero")
+            handleHeroScroll(dy > 0 ? 1 : -1);
+          else if (phase === "scrollable" && dy < 0 && isAtTop())
+            handleServicesUp();
+        }
       touchStart.current = null;
     };
 
@@ -193,7 +233,7 @@ export default function Home() {
       if (phase === "hero") {
         if      (e.key === "ArrowDown" || e.key === "PageDown") { e.preventDefault(); handleHeroScroll(1);  }
         else if (e.key === "ArrowUp"   || e.key === "PageUp")   { e.preventDefault(); handleHeroScroll(-1); }
-      } else if (phase === "scrollable" && window.scrollY < 10) {
+      } else if (phase === "scrollable" && isAtTop()) {
         if (e.key === "ArrowUp" || e.key === "PageUp") { e.preventDefault(); handleServicesUp(); }
       }
     };
@@ -203,6 +243,14 @@ export default function Home() {
     window.addEventListener("touchend",   onTouchEnd,   { passive: true  });
     window.addEventListener("keydown",    onKey);
     return () => {
+      if (forwardTransitionTimer.current) {
+        clearTimeout(forwardTransitionTimer.current);
+        forwardTransitionTimer.current = null;
+      }
+      if (backTransitionTimer.current) {
+        clearTimeout(backTransitionTimer.current);
+        backTransitionTimer.current = null;
+      }
       window.removeEventListener("wheel",      onWheel);
       window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("touchend",   onTouchEnd);

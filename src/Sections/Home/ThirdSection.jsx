@@ -2,7 +2,7 @@
 
 // ─── Third Section: Impact Numbers ───────────────────────────────────────────
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // Color palette: black / white / green (#00f5ff cyan + #00e676 green) ONLY
 const ACCENT  = "#00f5ff";  // cyan — matches Hero primary
@@ -16,14 +16,26 @@ const STATS = [
 ];
 
 export default function ThirdSection() {
-  const [mounted, setMounted] = useState(false);
+  const [inView, setInView] = useState(false);
+  const sectionRef = useRef(null);
 
   useEffect(() => {
-    setMounted(true);
+    const section = sectionRef.current;
+    if (!section) return;
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        setInView(entry.isIntersecting);
+      },
+      { rootMargin: "200px 0px" }
+    );
+
+    io.observe(section);
+    return () => io.disconnect();
   }, []);
 
   return (
-    <section id="impact" style={S.section}>
+    <section id="impact" ref={sectionRef} style={S.section} data-active={inView ? "true" : "false"}>
       <style>{`
         /* ── Background graph animations — UNTOUCHED ── */
         .bg-graph-wrapper {
@@ -216,10 +228,20 @@ export default function ThirdSection() {
           .arrow-head,
           .radar-ring { animation: none; }
         }
+
+        #impact[data-active="false"] .bg-graph-wrapper,
+        #impact[data-active="false"] .animated-data-grid,
+        #impact[data-active="false"] .data-stream,
+        #impact[data-active="false"] .glass-bar,
+        #impact[data-active="false"] .arrow-line,
+        #impact[data-active="false"] .arrow-head,
+        #impact[data-active="false"] .radar-ring {
+          animation-play-state: paused !important;
+        }
       `}</style>
 
       {/* ── Background: animated graph grid ── */}
-      {mounted && (
+      {inView && (
         <div className="bg-graph-wrapper">
           <div className="animated-data-grid" />
           <div className="data-stream stream-1" />
@@ -248,7 +270,7 @@ export default function ThirdSection() {
 
           {/* Body — Hero body token */}
           <p style={S.body}>
-            We don't just advise — we execute measurable outcomes. From
+            We don&apos;t just advise — we execute measurable outcomes. From
             early-stage traction to institutional rounds, our framework is
             built to scale.
           </p>
@@ -268,7 +290,7 @@ export default function ThirdSection() {
 
         {/* ── Right: animated SVG graph — UNTOUCHED ── */}
         <div className="impact-visual">
-          {mounted && (
+          {inView && (
             <svg viewBox="0 0 800 800" className="growth-svg" preserveAspectRatio="xMidYMid meet">
               <defs>
                 <filter id="premium-glow" x="-50%" y="-50%" width="200%" height="200%">

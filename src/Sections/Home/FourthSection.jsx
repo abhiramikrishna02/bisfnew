@@ -165,7 +165,7 @@ function useDollarRain(mountRef) {
       symbols.push(group);
     }
 
-    let rafId;
+    let rafId = 0;
 
     // ── FIX: Manual elapsed time via RAF timestamp, NOT THREE.Clock ──────────
     // THREE.Clock.getElapsedTime() uses Date.now() internally — it keeps
@@ -178,8 +178,6 @@ function useDollarRain(mountRef) {
     const MAX_DELTA = 0.05; // 50ms cap — renders at most 3 frames of motion after any gap
 
     function animate(ts) {
-      rafId = requestAnimationFrame(animate);
-
       const delta = lastTS === null ? 0 : Math.min((ts - lastTS) / 1000, MAX_DELTA);
       lastTS = ts;
       elapsedSecs += delta;
@@ -201,6 +199,8 @@ function useDollarRain(mountRef) {
       });
 
       renderer.render(scene, camera);
+
+      rafId = requestAnimationFrame(animate);
     }
 
     // Reset lastTS on tab restore — first resumed frame contributes 0 delta
@@ -209,7 +209,28 @@ function useDollarRain(mountRef) {
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
 
-    rafId = requestAnimationFrame(animate);
+    const startRAF = () => {
+      if (rafId) return;
+      rafId = requestAnimationFrame(animate);
+    };
+    const stopRAF = () => {
+      if (!rafId) return;
+      cancelAnimationFrame(rafId);
+      rafId = 0;
+    };
+
+    const io = new IntersectionObserver((entries) => {
+      const visible = entries.some((entry) => entry.isIntersecting);
+      if (visible) {
+        lastTS = null;
+        startRAF();
+      } else {
+        stopRAF();
+      }
+    }, { rootMargin: "200px 0px" });
+    io.observe(mount);
+
+    startRAF();
 
     const ro = new ResizeObserver(() => {
       W = mount.clientWidth;
@@ -222,7 +243,8 @@ function useDollarRain(mountRef) {
     ro.observe(mount);
 
     return () => {
-      cancelAnimationFrame(rafId);
+      stopRAF();
+      io.disconnect();
       ro.disconnect();
       document.removeEventListener("visibilitychange", onVisibilityChange);
       dollarGeo.dispose();
@@ -231,7 +253,7 @@ function useDollarRain(mountRef) {
       renderer.dispose();
       if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
     };
-  }, []);
+  }, [mountRef]);
 }
 
 export default function FourthSection() {

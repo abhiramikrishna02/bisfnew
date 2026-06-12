@@ -123,7 +123,7 @@ function useThreeScene(mountRef) {
     }
     adjustLayout();
 
-    let rafId;
+    let rafId = 0;
     // ── Use elapsed seconds tracked manually via RAF timestamp ───────────────
     // This avoids THREE.Clock which uses wall-clock time and accumulates during
     // any pause (visibility:hidden, tab switch, etc.) causing position jumps.
@@ -132,8 +132,6 @@ function useThreeScene(mountRef) {
     const MAX_DELTA   = 0.05; // cap at 50ms — prevents any jump after pauses
 
     function animate(ts) {
-      rafId = requestAnimationFrame(animate);
-
       const delta = lastTS === null ? 0 : Math.min((ts - lastTS) / 1000, MAX_DELTA);
       lastTS = ts;
       elapsedSecs += delta;
@@ -149,6 +147,8 @@ function useThreeScene(mountRef) {
       });
 
       renderer.render(scene, camera);
+
+      rafId = requestAnimationFrame(animate);
     }
 
     // Reset lastTS on visibility restore so first resumed frame = 0 delta
@@ -157,7 +157,28 @@ function useThreeScene(mountRef) {
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
 
-    rafId = requestAnimationFrame(animate);
+    const startRAF = () => {
+      if (rafId) return;
+      rafId = requestAnimationFrame(animate);
+    };
+    const stopRAF = () => {
+      if (!rafId) return;
+      cancelAnimationFrame(rafId);
+      rafId = 0;
+    };
+
+    const io = new IntersectionObserver((entries) => {
+      const visible = entries.some((entry) => entry.isIntersecting);
+      if (visible) {
+        lastTS = null;
+        startRAF();
+      } else {
+        stopRAF();
+      }
+    }, { rootMargin: "200px 0px" });
+    io.observe(mount);
+
+    startRAF();
 
     const ro = new ResizeObserver(() => {
       W = mount.clientWidth;
@@ -171,7 +192,8 @@ function useThreeScene(mountRef) {
     ro.observe(mount);
 
     return () => {
-      cancelAnimationFrame(rafId);
+      stopRAF();
+      io.disconnect();
       ro.disconnect();
       document.removeEventListener("visibilitychange", onVisibilityChange);
       geometry.dispose();
@@ -179,7 +201,7 @@ function useThreeScene(mountRef) {
       renderer.dispose();
       if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
     };
-  }, []);
+  }, [mountRef]);
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -396,7 +418,7 @@ export default function SecondSection() {
             </h2>
 
             <p className="ss-body">
-              A full-stack facilitation environment built for India's next
+              A full-stack facilitation environment built for India&apos;s next
               generation of entrepreneurs — from ideation to investor-ready
               execution.
             </p>

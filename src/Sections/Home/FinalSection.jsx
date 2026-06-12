@@ -32,7 +32,8 @@ export default function FinalSection() {
     let elapsedSecs = 0;
     let lastTS      = null;
     const MAX_DELTA = 0.05; // 50ms — caps jump after tab switch or any pause
-    let raf;
+    let raf = 0;
+    let rafActive = false;
 
     function resize() {
       canvas.width  = section.offsetWidth;
@@ -44,6 +45,8 @@ export default function FinalSection() {
     ro.observe(section);
 
     function frame(ts) {
+      if (!rafActive) return;
+
       const delta = lastTS === null ? 0 : Math.min((ts - lastTS) / 1000, MAX_DELTA);
       lastTS = ts;
       elapsedSecs += delta;
@@ -150,10 +153,34 @@ export default function FinalSection() {
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
 
-    raf = requestAnimationFrame(frame);
+    const startRAF = () => {
+      if (raf) return;
+      rafActive = true;
+      raf = requestAnimationFrame(frame);
+    };
+    const stopRAF = () => {
+      rafActive = false;
+      if (!raf) return;
+      cancelAnimationFrame(raf);
+      raf = 0;
+    };
+
+    const io = new IntersectionObserver((entries) => {
+      const visible = entries.some((entry) => entry.isIntersecting);
+      if (visible) {
+        lastTS = null;
+        startRAF();
+      } else {
+        stopRAF();
+      }
+    }, { rootMargin: "200px 0px" });
+    io.observe(section);
+
+    startRAF();
 
     return () => {
-      cancelAnimationFrame(raf);
+      stopRAF();
+      io.disconnect();
       ro.disconnect();
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
@@ -340,7 +367,7 @@ export default function FinalSection() {
         <canvas id="contact-canvas" ref={canvasRef} />
 
         <div id="contact-inner">
-          <span className="fs-eyebrow">● Let's Begin</span>
+          <span className="fs-eyebrow">● Let&apos;s Begin</span>
 
           <h2 className="fs-h2">
             Ready to Build
