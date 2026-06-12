@@ -27,8 +27,12 @@ function useThreeScene(mountRef) {
     let H = mount.clientHeight;
     if (!W || !H) return;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const renderer = new THREE.WebGLRenderer({
+      antialias: false,
+      alpha: true,
+      powerPreference: "high-performance",
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     renderer.setSize(W, H);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 2.4;
@@ -78,7 +82,7 @@ function useThreeScene(mountRef) {
     const RADIUS_Y    = 1.5;
 
     const ring     = new THREE.Group();
-    const geometry = new THREE.CylinderGeometry(0.58, 0.58, 0.09, 64);
+    const geometry = new THREE.CylinderGeometry(0.58, 0.58, 0.09, 32);
     geometry.rotateX(Math.PI / 2);
 
     const pieces = [];
@@ -95,9 +99,9 @@ function useThreeScene(mountRef) {
       mesh.rotation.z = angle;
 
       mesh.userData = {
-        rotSpeedX: 0.8  + (i % 3) * 0.25,
-        rotSpeedY: 1.1  + (i % 2) * 0.35,
-        rotSpeedZ: 0.5  + (i % 4) * 0.15,
+        rotSpeedX: 1.05 + (i % 3) * 0.28,
+        rotSpeedY: 1.35 + (i % 2) * 0.40,
+        rotSpeedZ: 0.65 + (i % 4) * 0.18,
         phase: angle,
       };
 
@@ -137,13 +141,13 @@ function useThreeScene(mountRef) {
       elapsedSecs += delta;
 
       const t = elapsedSecs;
-      ring.rotation.z = -t * (Math.PI * 2 / 60);
+      ring.rotation.z = -t * (Math.PI * 2 / 42);
 
       pieces.forEach((mesh) => {
         const { rotSpeedX, rotSpeedY, rotSpeedZ, phase } = mesh.userData;
-        mesh.rotation.x = 0.4 * Math.sin(phase) + t * rotSpeedX * 0.6;
-        mesh.rotation.y = 0.4 * Math.cos(phase) + t * rotSpeedY * 0.6;
-        mesh.rotation.z = phase + t * rotSpeedZ * 0.35;
+        mesh.rotation.x = 0.4 * Math.sin(phase) + t * rotSpeedX * 0.8;
+        mesh.rotation.y = 0.4 * Math.cos(phase) + t * rotSpeedY * 0.8;
+        mesh.rotation.z = phase + t * rotSpeedZ * 0.45;
       });
 
       renderer.render(scene, camera);
