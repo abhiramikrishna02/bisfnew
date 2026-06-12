@@ -50,14 +50,10 @@ function HeroContent({ color, visible }) {
 
 // ─── Hero Section ─────────────────────────────────────────────────────────────
 export default function Hero({
-  canvasRef,
-  assembleProgress,
-  zoomProgress,
-  fragsRef,
-  internalTick,
-  isVisible,
-  contentVisible,
-  engineEnabled,
+  internalTick = { current: 0 },
+  isVisible = true,
+  contentVisible = true,
+  engineEnabled = true,
 }) {
   return (
     <>
@@ -108,15 +104,14 @@ export default function Hero({
       `}</style>
 
       <div
+        id="hero"
         style={{
-          position: "fixed",
-          inset: 0,
+          position: "relative",
           width: "100%",
-          height: "100vh",
+          minHeight: "100vh",
           overflow: "hidden",
           background: "#03030a",
-          zIndex: isVisible ? 10 : -1,
-          visibility: isVisible ? "visible" : "hidden",
+          zIndex: 1,
         }}
       >
         {/* ── Prism WebGL Background ── */}
