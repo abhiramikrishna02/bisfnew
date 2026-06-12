@@ -264,12 +264,18 @@ export default function Home() {
         engineEnabled={isHero}
       />
 
-      {/* ── SCROLLABLE SECTIONS ── */}
+      {/* ── SCROLLABLE SECTIONS ──
+          KEY FIX: use opacity:0 + pointerEvents:none instead of visibility:hidden.
+          visibility:hidden causes browsers to suspend requestAnimationFrame for
+          elements that aren't being painted, which freezes Three.js animations.
+          opacity:0 keeps the element fully rendered (RAF stays alive) but invisible.
+      ── */}
       <div style={{
         background: "#03030a",
         minHeight: "100vh",
-        visibility: isHero ? "hidden" : "visible",
+        opacity: isHero ? 0 : 1,
         pointerEvents: isHero ? "none" : "auto",
+        transition: "opacity 0s",  // instant — transitions handled by phase logic above
       }}>
         <SecondSection />
         <ThirdSection />

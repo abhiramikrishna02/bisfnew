@@ -5,7 +5,6 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-// Color palette: black / white / cyan-green ONLY
 const ACCENT = "#00f5ff";
 
 const STEPS = [
@@ -26,7 +25,6 @@ const STEPS = [
   },
 ];
 
-// ─── Dollar sign shape — UNTOUCHED ───────────────────────────────────────────
 function createDollarShape() {
   const shape = new THREE.Shape();
   shape.moveTo(0.28, 0.55);
@@ -49,7 +47,6 @@ function createDollarShape() {
   return shape;
 }
 
-// ─── Three.js Scene — UNTOUCHED ──────────────────────────────────────────────
 function useDollarRain(mountRef) {
   useEffect(() => {
     const mount = mountRef.current;
@@ -169,11 +166,25 @@ function useDollarRain(mountRef) {
     }
 
     let rafId;
-    const clock = new THREE.Clock();
 
-    function animate() {
+    // ── FIX: Manual elapsed time via RAF timestamp, NOT THREE.Clock ──────────
+    // THREE.Clock.getElapsedTime() uses Date.now() internally — it keeps
+    // ticking even when RAF is paused/throttled by the browser. On resume,
+    // t jumps forward causing the sudden freeze+snap behaviour.
+    // We track our own elapsedSecs that only advances by actual rendered deltas,
+    // capped at 50ms so any leftover pause gap can never cause a visible jump.
+    let elapsedSecs = 0;
+    let lastTS      = null;
+    const MAX_DELTA = 0.05; // 50ms cap — renders at most 3 frames of motion after any gap
+
+    function animate(ts) {
       rafId = requestAnimationFrame(animate);
-      const t = clock.getElapsedTime();
+
+      const delta = lastTS === null ? 0 : Math.min((ts - lastTS) / 1000, MAX_DELTA);
+      lastTS = ts;
+      elapsedSecs += delta;
+
+      const t = elapsedSecs;
 
       symbols.forEach((mesh) => {
         const d = mesh.userData;
@@ -191,7 +202,14 @@ function useDollarRain(mountRef) {
 
       renderer.render(scene, camera);
     }
-    animate();
+
+    // Reset lastTS on tab restore — first resumed frame contributes 0 delta
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") lastTS = null;
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    rafId = requestAnimationFrame(animate);
 
     const ro = new ResizeObserver(() => {
       W = mount.clientWidth;
@@ -206,6 +224,7 @@ function useDollarRain(mountRef) {
     return () => {
       cancelAnimationFrame(rafId);
       ro.disconnect();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       dollarGeo.dispose();
       strokeGeo.dispose();
       greenMat.dispose();
@@ -215,7 +234,6 @@ function useDollarRain(mountRef) {
   }, []);
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
 export default function FourthSection() {
   const mountRef = useRef(null);
   useDollarRain(mountRef);
@@ -223,7 +241,6 @@ export default function FourthSection() {
   return (
     <>
       <style>{`
-        /* ── Section shell ── */
         #process {
           position: relative;
           min-height: 100vh;
@@ -234,11 +251,9 @@ export default function FourthSection() {
           border-top: 1px solid rgba(255,255,255,0.04);
           padding: 6rem 0;
           overflow: hidden;
-          /* own compositor layer — prevents scroll repaints */
           isolation: isolate;
         }
 
-        /* ── 3D canvas — pointer-events off so it never blocks scroll ── */
         #process-canvas {
           position: absolute;
           inset: 0;
@@ -248,7 +263,6 @@ export default function FourthSection() {
           pointer-events: none;
         }
 
-        /* ── Centre vignette — keeps text readable ── */
         #process::before {
           content: '';
           position: absolute;
@@ -265,7 +279,6 @@ export default function FourthSection() {
           pointer-events: none;
         }
 
-        /* ── Foreground content ── */
         #process-inner {
           position: relative;
           z-index: 2;
@@ -278,7 +291,6 @@ export default function FourthSection() {
           box-sizing: border-box;
         }
 
-        /* ── Eyebrow — cyan, matches Hero label token ── */
         .ps-eyebrow {
           font-size: 11px;
           font-weight: 700;
@@ -291,7 +303,6 @@ export default function FourthSection() {
           align-items: center;
           gap: 12px;
         }
-        /* Decorative rule — cyan */
         .ps-eyebrow::before {
           content: '';
           display: inline-block;
@@ -302,7 +313,6 @@ export default function FourthSection() {
           flex-shrink: 0;
         }
 
-        /* ── H2 — Hero weight (800) + tracking (-0.03em) ── */
         .ps-h2 {
           font-weight: 800;
           font-size: clamp(2.8rem, 5vw, 4.6rem);
@@ -314,14 +324,12 @@ export default function FourthSection() {
             0 2px 4px  rgba(0,0,0,0.95),
             0 4px 32px rgba(0,0,0,0.80);
         }
-        /* Second line — dimmed white, same pattern as Hero/SecondSection */
         .ps-h2-dim {
           display: block;
           color: rgba(255,255,255,0.45);
           margin-top: 0.12em;
         }
 
-        /* ── Accent rule below headline — cyan ── */
         .ps-rule {
           width: 48px;
           height: 2px;
@@ -331,14 +339,12 @@ export default function FourthSection() {
           margin-bottom: 2.2rem;
         }
 
-        /* ── Timeline list ── */
         .ps-timeline {
           display: flex;
           flex-direction: column;
           gap: 10px;
         }
 
-        /* Card — NO backdrop-filter (scroll jank source removed) */
         .ps-item {
           display: flex;
           align-items: flex-start;
@@ -347,7 +353,6 @@ export default function FourthSection() {
           border: 1px solid rgba(0,245,255,0.10);
           border-radius: 14px;
           background: rgba(3,3,10,0.80);
-          /* GPU-only transitions — no paint on hover */
           transition: transform 0.3s ease, border-color 0.3s ease;
           will-change: transform;
           box-sizing: border-box;
@@ -357,7 +362,6 @@ export default function FourthSection() {
           border-color: rgba(0,245,255,0.28);
         }
 
-        /* Step badge — cyan border + text */
         .ps-step {
           font-size: 9px;
           font-weight: 700;
@@ -373,7 +377,6 @@ export default function FourthSection() {
           text-shadow: 0 0 10px rgba(0,245,255,0.40);
         }
 
-        /* Step title — Hero body weight, full white */
         .ps-title {
           font-size: 15px;
           font-weight: 600;
@@ -383,7 +386,6 @@ export default function FourthSection() {
           line-height: 1.3;
         }
 
-        /* Step description — Hero body token opacity (0.60) */
         .ps-desc {
           font-size: 13px;
           font-weight: 400;
@@ -393,7 +395,6 @@ export default function FourthSection() {
           margin: 0;
         }
 
-        /* ── Responsive ── */
         @media (max-width: 640px) {
           #process        { padding: 4.5rem 0; }
           #process-inner  { padding: 0 1.5rem; }
@@ -405,33 +406,24 @@ export default function FourthSection() {
           #process { padding: 4rem 0; }
         }
 
-        /* Reduced motion */
         @media (prefers-reduced-motion: reduce) {
           .ps-item { transition: none; }
         }
       `}</style>
 
       <section id="process">
-
-        {/* ── 3D Background — UNTOUCHED ── */}
         <div id="process-canvas" ref={mountRef} />
 
-        {/* ── Foreground ── */}
         <div id="process-inner">
-
-          {/* Eyebrow */}
           <p className="ps-eyebrow">How It Works</p>
 
-          {/* H2 — two lines matching Hero pattern */}
           <h2 className="ps-h2">
             Your Journey
             <span className="ps-h2-dim">Our Framework</span>
           </h2>
 
-          {/* Cyan accent rule */}
           <div className="ps-rule" />
 
-          {/* Timeline steps */}
           <div className="ps-timeline">
             {STEPS.map((t) => (
               <div key={t.step} className="ps-item">
@@ -443,9 +435,7 @@ export default function FourthSection() {
               </div>
             ))}
           </div>
-
         </div>
-
       </section>
     </>
   );

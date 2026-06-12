@@ -6,7 +6,7 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
 // ─── Color palette: black / white / green ONLY ────────────────────────────────
-const ACCENT = "#00f5ff"; // cyan-green accent (matches Hero primary)
+const ACCENT = "#00f5ff";
 
 const SERVICES = [
   { label: "Startup Education",    c: ACCENT },
@@ -38,7 +38,6 @@ function useThreeScene(mountRef) {
     const camera = new THREE.PerspectiveCamera(38, W / H, 0.1, 100);
     camera.position.set(0, 0, 7.5);
 
-    // Lighting — green-tinted key, white fill
     scene.add(new THREE.AmbientLight(0x03030a, 0.6));
 
     const frontLight = new THREE.DirectionalLight(0xffffff, 10);
@@ -49,7 +48,6 @@ function useThreeScene(mountRef) {
     keyLight.position.set(5, 8, 4);
     scene.add(keyLight);
 
-    // Rim lights — green palette only
     const rimLight1 = new THREE.DirectionalLight(0x00f5ff, 28);
     rimLight1.position.set(-6, 3, -4);
     scene.add(rimLight1);
@@ -58,7 +56,6 @@ function useThreeScene(mountRef) {
     rimLight2.position.set(6, -3, -4);
     scene.add(rimLight2);
 
-    // Glass material — deep green base, cyan reflections
     const glassMat = new THREE.MeshPhysicalMaterial({
       color:              new THREE.Color(0x0a3d1f),
       emissive:           new THREE.Color(0x0a2e10),
@@ -77,8 +74,8 @@ function useThreeScene(mountRef) {
     });
 
     const PIECE_COUNT = 9;
-    const RADIUS_X    = 1.8;  // tighter horizontal spread
-    const RADIUS_Y    = 1.5;  // tighter vertical spread
+    const RADIUS_X    = 1.8;
+    const RADIUS_Y    = 1.5;
 
     const ring     = new THREE.Group();
     const geometry = new THREE.CylinderGeometry(0.58, 0.58, 0.09, 64);
@@ -109,7 +106,6 @@ function useThreeScene(mountRef) {
     }
     scene.add(ring);
 
-    // Responsive layout positioning
     function adjustLayout() {
       if (W < 768) {
         ring.position.set(0, 0.5, -2);
@@ -128,12 +124,21 @@ function useThreeScene(mountRef) {
     adjustLayout();
 
     let rafId;
-    const clock = new THREE.Clock();
+    // ── Use elapsed seconds tracked manually via RAF timestamp ───────────────
+    // This avoids THREE.Clock which uses wall-clock time and accumulates during
+    // any pause (visibility:hidden, tab switch, etc.) causing position jumps.
+    let elapsedSecs   = 0;
+    let lastTS        = null;
+    const MAX_DELTA   = 0.05; // cap at 50ms — prevents any jump after pauses
 
-    function animate() {
+    function animate(ts) {
       rafId = requestAnimationFrame(animate);
-      const t = clock.getElapsedTime();
 
+      const delta = lastTS === null ? 0 : Math.min((ts - lastTS) / 1000, MAX_DELTA);
+      lastTS = ts;
+      elapsedSecs += delta;
+
+      const t = elapsedSecs;
       ring.rotation.z = -t * (Math.PI * 2 / 60);
 
       pieces.forEach((mesh) => {
@@ -145,7 +150,14 @@ function useThreeScene(mountRef) {
 
       renderer.render(scene, camera);
     }
-    animate();
+
+    // Reset lastTS on visibility restore so first resumed frame = 0 delta
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") lastTS = null;
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    rafId = requestAnimationFrame(animate);
 
     const ro = new ResizeObserver(() => {
       W = mount.clientWidth;
@@ -161,6 +173,7 @@ function useThreeScene(mountRef) {
     return () => {
       cancelAnimationFrame(rafId);
       ro.disconnect();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       geometry.dispose();
       glassMat.dispose();
       renderer.dispose();
@@ -177,7 +190,6 @@ export default function SecondSection() {
   return (
     <>
       <style>{`
-        /* ── Section shell ── */
         #services {
           position: relative;
           min-height: 100vh;
@@ -189,7 +201,6 @@ export default function SecondSection() {
           box-sizing: border-box;
         }
 
-        /* ── 3-D canvas layer ── */
         .ss-bg-container {
           position: absolute;
           inset: 0;
@@ -204,12 +215,9 @@ export default function SecondSection() {
           height: 100%;
         }
 
-        /* ── Gradient overlay — global dark veil + left text fade ── */
         .ss-light-overlay {
           position: absolute;
           inset: 0;
-          /* Layer 1: uniform dark veil so cylinders read as atmospheric, not harsh */
-          /* Layer 2: left-side ramp for text legibility */
           background:
             linear-gradient(
               to right,
@@ -218,13 +226,11 @@ export default function SecondSection() {
               rgba(3,3,10,0.28) 52%,
               rgba(3,3,10,0.42) 100%
             ),
-            /* global dark tint sitting under everything */
             rgba(3,3,10,0.38);
           z-index: 2;
           pointer-events: none;
         }
 
-        /* ── Foreground content ── */
         .ss-foreground {
           position: relative;
           z-index: 3;
@@ -239,7 +245,6 @@ export default function SecondSection() {
           max-width: 640px;
         }
 
-        /* ── Eyebrow ── */
         .ss-eyebrow {
           font-size: 11px;
           font-weight: 700;
@@ -251,7 +256,6 @@ export default function SecondSection() {
           display: block;
         }
 
-        /* ── Headline — matches Hero weight/tracking exactly ── */
         .ss-headline {
           font-size: clamp(2.6rem, 5vw, 4.8rem);
           font-weight: 800;
@@ -265,17 +269,13 @@ export default function SecondSection() {
             0 0 80px   rgba(0,0,0,0.50);
         }
 
-        .ss-headline span {
-          display: block;
-        }
+        .ss-headline span { display: block; }
 
-        /* Second line slightly dimmed, same weight — matches Hero h1 line pattern */
         .ss-headline-sub {
           color: rgba(255,255,255,0.50);
           margin-top: 0.35rem;
         }
 
-        /* ── Body copy — matches Hero body token ── */
         .ss-body {
           font-size: clamp(0.95rem, 1.4vw, 1.1rem);
           font-weight: 400;
@@ -286,7 +286,6 @@ export default function SecondSection() {
           max-width: 500px;
         }
 
-        /* ── Service grid ── */
         .ss-grid {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
@@ -294,7 +293,6 @@ export default function SecondSection() {
           margin-top: 3.5rem;
         }
 
-        /* ── Service card ── */
         .ss-card {
           position: relative;
           padding: 1.6rem 1.4rem;
@@ -325,7 +323,6 @@ export default function SecondSection() {
             0 0 18px var(--glow);
         }
 
-        /* Accent bar inside card */
         .ss-card-bar {
           width: 22px;
           height: 2px;
@@ -336,11 +333,8 @@ export default function SecondSection() {
           transition: width 0.4s ease;
         }
 
-        .ss-card:hover .ss-card-bar {
-          width: 36px;
-        }
+        .ss-card:hover .ss-card-bar { width: 36px; }
 
-        /* Card label — same uppercase tracking as Hero label token */
         .ss-card-label {
           font-size: 13px;
           font-weight: 600;
@@ -350,9 +344,6 @@ export default function SecondSection() {
           line-height: 1.4;
         }
 
-        /* ── Responsive breakpoints ── */
-
-        /* Tablets & small laptops */
         @media (max-width: 1023px) {
           #services { padding: 5rem 0; }
           .ss-foreground { padding: 0 2.5rem; }
@@ -369,7 +360,6 @@ export default function SecondSection() {
           }
         }
 
-        /* Large phones */
         @media (max-width: 767px) {
           #services { padding: 4.5rem 0; }
           .ss-foreground { padding: 0 1.5rem; }
@@ -380,66 +370,51 @@ export default function SecondSection() {
           }
         }
 
-        /* Small phones */
         @media (max-width: 479px) {
           .ss-grid { grid-template-columns: 1fr; gap: 12px; }
           .ss-headline { letter-spacing: -0.02em; }
         }
 
-        /* Reduced motion */
         @media (prefers-reduced-motion: reduce) {
           .ss-card { transition: none; }
         }
       `}</style>
 
       <section id="services">
-
-        {/* ── 3-D background ── */}
         <div className="ss-bg-container">
           <div ref={mountRef} className="ss-canvas" />
           <div className="ss-light-overlay" />
         </div>
 
-        {/* ── Foreground content ── */}
         <div className="ss-foreground">
           <div className="ss-content-wrapper">
-
-            {/* Eyebrow — uppercase, cyan, matches Hero label style */}
             <span className="ss-eyebrow">● What We Do</span>
 
-            {/* H2 — two lines, same weight/tracking as Hero H1 */}
             <h2 className="ss-headline">
               <span>What We Build</span>
               <span className="ss-headline-sub">With Founders</span>
             </h2>
 
-            {/* Body — matches Hero body token */}
             <p className="ss-body">
               A full-stack facilitation environment built for India's next
               generation of entrepreneurs — from ideation to investor-ready
               execution.
             </p>
 
-            {/* Service cards grid */}
             <div className="ss-grid">
               {SERVICES.map((svc) => (
                 <div
                   key={svc.label}
                   className="ss-card"
-                  style={{
-                    "--c":    svc.c,
-                    "--glow": `${svc.c}33`,
-                  }}
+                  style={{ "--c": svc.c, "--glow": `${svc.c}33` }}
                 >
                   <div className="ss-card-bar" />
                   <span className="ss-card-label">{svc.label}</span>
                 </div>
               ))}
             </div>
-
           </div>
         </div>
-
       </section>
     </>
   );
