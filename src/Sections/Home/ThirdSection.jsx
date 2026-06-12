@@ -1,21 +1,23 @@
 "use client";
 
 // ─── Third Section: Impact Numbers ───────────────────────────────────────────
-// Fully self-contained. Replace this file freely — no other section is affected.
 
 import { useEffect, useState } from "react";
 
+// Color palette: black / white / green (#00f5ff cyan + #00e676 green) ONLY
+const ACCENT  = "#00f5ff";  // cyan — matches Hero primary
+const GREEN   = "#00e676";  // pure green
+
 const STATS = [
-  { num: "500+",    lbl: "Founders Mentored",   c: "#34d399" }, // Mint
-  { num: "₹120Cr+", lbl: "Capital Facilitated", c: "#818cf8" }, // Indigo
-  { num: "18",      lbl: "Countries Entered",   c: "#06b6d4" }, // Cyan
-  { num: "92%",     lbl: "Success Rate",        c: "#ff2ebe" }, // Neon Pink
+  { num: "500+",    lbl: "Founders Mentored",   c: GREEN  },
+  { num: "₹120Cr+", lbl: "Capital Facilitated", c: ACCENT },
+  { num: "18",      lbl: "Countries Entered",   c: GREEN  },
+  { num: "92%",     lbl: "Success Rate",        c: ACCENT },
 ];
 
 export default function ThirdSection() {
   const [mounted, setMounted] = useState(false);
 
-  // Prevent hydration mismatch for keyframe animations
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -23,13 +25,15 @@ export default function ThirdSection() {
   return (
     <section id="impact" style={S.section}>
       <style>{`
-        /* ── Continuous Background Graph Animations ── */
+        /* ── Background graph animations — UNTOUCHED ── */
         .bg-graph-wrapper {
           position: absolute;
           inset: 0;
           overflow: hidden;
           z-index: 0;
           pointer-events: none;
+          /* GPU layer so the animation never paints on the main thread */
+          will-change: transform;
         }
 
         .animated-data-grid {
@@ -38,23 +42,21 @@ export default function ThirdSection() {
           height: 200vh;
           top: -50vh;
           left: -50vw;
-          /* Premium Graph Grid Lines */
-          background-image: 
-            linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+          background-image:
+            linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
           background-size: 60px 60px;
-          /* 3D Perspective Tilt */
           transform: perspective(1000px) rotateX(60deg) scale(2);
-          /* Continuous forward movement: travels exactly one grid cell (60px) to loop perfectly */
           animation: panGrid 4s linear infinite;
+          will-change: transform;
         }
 
         @keyframes panGrid {
-          0% { transform: perspective(1000px) rotateX(60deg) scale(2) translateY(0); }
+          0%   { transform: perspective(1000px) rotateX(60deg) scale(2) translateY(0); }
           100% { transform: perspective(1000px) rotateX(60deg) scale(2) translateY(60px); }
         }
 
-        /* Glowing Horizontal Data Streams */
+        /* Data streams — green palette only */
         .data-stream {
           position: absolute;
           height: 1px;
@@ -62,28 +64,29 @@ export default function ThirdSection() {
           left: -50%;
           opacity: 0.6;
           animation: streamFlow linear infinite;
+          will-change: transform;
         }
         .stream-1 {
           top: 30%;
-          background: linear-gradient(90deg, transparent 0%, #34d399 50%, transparent 100%);
+          background: linear-gradient(90deg, transparent 0%, #00e676 50%, transparent 100%);
           animation-duration: 12s;
         }
         .stream-2 {
           top: 75%;
-          background: linear-gradient(90deg, transparent 0%, #818cf8 50%, transparent 100%);
+          background: linear-gradient(90deg, transparent 0%, #00f5ff 50%, transparent 100%);
           animation-duration: 8s;
           animation-direction: reverse;
         }
 
         @keyframes streamFlow {
-          0% { transform: translateX(-25%); }
+          0%   { transform: translateX(-25%); }
           100% { transform: translateX(25%); }
         }
 
-        /* ── Core Layout Responsiveness ── */
+        /* ── Layout ── */
         .impact-container {
           position: relative;
-          z-index: 10; /* Keeps content above the moving background */
+          z-index: 10;
           max-width: 1280px;
           margin: 0 auto;
           width: 100%;
@@ -92,6 +95,7 @@ export default function ThirdSection() {
           align-items: center;
           justify-content: space-between;
           gap: 4rem;
+          box-sizing: border-box;
         }
 
         .impact-content {
@@ -115,20 +119,7 @@ export default function ThirdSection() {
           overflow: visible;
         }
 
-        @media (max-width: 960px) {
-          .impact-container {
-            flex-direction: column;
-            padding: 0 2rem;
-            gap: 3rem;
-          }
-          .impact-content, .impact-visual {
-            flex: unset;
-            max-width: 100%;
-            width: 100%;
-          }
-        }
-
-        /* ── Premium SVG Animations ── */
+        /* ── SVG animations — UNTOUCHED ── */
         .glass-bar {
           transform-origin: bottom;
           animation: barRise 6s cubic-bezier(0.16, 1, 0.3, 1) infinite;
@@ -139,9 +130,9 @@ export default function ThirdSection() {
         .bar-4 { animation-delay: 0.6s; }
 
         @keyframes barRise {
-          0% { transform: scaleY(0); opacity: 0; }
-          15%, 80% { transform: scaleY(1); opacity: 1; }
-          95%, 100% { transform: scaleY(0); opacity: 0; }
+          0%         { transform: scaleY(0); opacity: 0; }
+          15%, 80%   { transform: scaleY(1); opacity: 1; }
+          95%, 100%  { transform: scaleY(0); opacity: 0; }
         }
 
         .arrow-line {
@@ -151,10 +142,10 @@ export default function ThirdSection() {
         }
 
         @keyframes drawLine {
-          0%, 15% { stroke-dashoffset: 100; opacity: 0; filter: brightness(0.5); }
-          20% { opacity: 1; filter: brightness(1); }
-          45%, 80% { stroke-dashoffset: 0; opacity: 1; filter: brightness(1); }
-          95%, 100% { stroke-dashoffset: 0; opacity: 0; filter: brightness(0); }
+          0%, 15%    { stroke-dashoffset: 100; opacity: 0; filter: brightness(0.5); }
+          20%        { opacity: 1; filter: brightness(1); }
+          45%, 80%   { stroke-dashoffset: 0; opacity: 1; filter: brightness(1); }
+          95%, 100%  { stroke-dashoffset: 0; opacity: 0; filter: brightness(0); }
         }
 
         .arrow-head {
@@ -164,9 +155,9 @@ export default function ThirdSection() {
         }
 
         @keyframes popHead {
-          0%, 42% { opacity: 0; transform: scale(0.5) translate(-10px, 10px); }
-          46%, 80% { opacity: 1; transform: scale(1) translate(0, 0); }
-          95%, 100% { opacity: 0; transform: scale(0.8); }
+          0%, 42%    { opacity: 0; transform: scale(0.5) translate(-10px, 10px); }
+          46%, 80%   { opacity: 1; transform: scale(1) translate(0, 0); }
+          95%, 100%  { opacity: 0; transform: scale(0.8); }
         }
 
         .radar-ring {
@@ -178,50 +169,91 @@ export default function ThirdSection() {
         .ring-3 { animation-delay: 4s; }
 
         @keyframes pulseRing {
-          0% { transform: scale(0.8); opacity: 0; }
-          50% { opacity: 0.3; }
+          0%   { transform: scale(0.8); opacity: 0; }
+          50%  { opacity: 0.3; }
           100% { transform: scale(1.2); opacity: 0; }
         }
 
-        /* Hover Effect for Stats */
+        /* ── Stat card hover — GPU-only transform, no backdrop repaint ── */
         .stat-card-hover {
-          transition: transform 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+          transition: transform 0.3s ease, border-color 0.3s ease;
+          will-change: transform;
         }
         .stat-card-hover:hover {
-          transform: translateY(-5px);
-          background: rgba(255, 255, 255, 0.04) !important;
-          border-color: rgba(255, 255, 255, 0.1) !important;
+          transform: translateY(-4px);
+          border-color: rgba(255,255,255,0.10) !important;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 960px) {
+          .impact-container {
+            flex-direction: column;
+            padding: 0 2.5rem;
+            gap: 3rem;
+          }
+          .impact-content,
+          .impact-visual {
+            flex: unset;
+            max-width: 100%;
+            width: 100%;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .impact-container { padding: 0 1.5rem; gap: 2rem; }
+        }
+
+        @media (max-width: 479px) {
+          #impact { padding: 4rem 0; }
+        }
+
+        /* Reduce motion */
+        @media (prefers-reduced-motion: reduce) {
+          .animated-data-grid,
+          .data-stream,
+          .glass-bar,
+          .arrow-line,
+          .arrow-head,
+          .radar-ring { animation: none; }
         }
       `}</style>
 
-      {/* ── Background Layer: Continuous Data Graph ── */}
+      {/* ── Background: animated graph grid ── */}
       {mounted && (
         <div className="bg-graph-wrapper">
-          <div className="animated-data-grid"></div>
-          <div className="data-stream stream-1"></div>
-          <div className="data-stream stream-2"></div>
-          {/* Vignette to fade grid out at edges smoothly */}
+          <div className="animated-data-grid" />
+          <div className="data-stream stream-1" />
+          <div className="data-stream stream-2" />
           <div style={{
-            position: 'absolute',
+            position: "absolute",
             inset: 0,
-            background: 'radial-gradient(circle at center, transparent 10%, #03030a 80%)',
-          }}></div>
+            background: "radial-gradient(circle at center, transparent 10%, #03030a 80%)",
+          }} />
         </div>
       )}
 
       <div className="impact-container">
-        
-        {/* ── Left Content: Typography & Cards ── */}
+
+        {/* ── Left: text + stat cards ── */}
         <div className="impact-content">
+
+          {/* Eyebrow — cyan, uppercase, matches Hero label style */}
           <p style={S.eyebrow}>● Performance Metrics</p>
+
+          {/* H2 — Hero weight (800) + tracking */}
           <h2 style={S.h2}>
-            Engineering <br/>
-            <span style={S.h2Gradient}>Exponential Growth</span>
+            Engineering <br />
+            <span style={S.h2Accent}>Exponential Growth</span>
           </h2>
+
+          {/* Body — Hero body token */}
           <p style={S.body}>
-            We don’t just advise; we execute measurable outcomes. From early-stage traction to institutional rounds, our framework is mathematically structured to scale.
+            We don't just advise — we execute measurable outcomes. From
+            early-stage traction to institutional rounds, our framework is
+            built to scale.
           </p>
-          
+
+          {/* Stat grid */}
           <div style={S.grid}>
             {STATS.map((stat) => (
               <div key={stat.lbl} className="stat-card-hover" style={S.statBox}>
@@ -234,13 +266,13 @@ export default function ThirdSection() {
           </div>
         </div>
 
-        {/* ── Right Content: 3D-Style Animated SVG Graph ── */}
+        {/* ── Right: animated SVG graph — UNTOUCHED ── */}
         <div className="impact-visual">
           {mounted && (
             <svg viewBox="0 0 800 800" className="growth-svg" preserveAspectRatio="xMidYMid meet">
               <defs>
                 <filter id="premium-glow" x="-50%" y="-50%" width="200%" height="200%">
-                  <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur1" />
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="4"  result="blur1" />
                   <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur2" />
                   <feGaussianBlur in="SourceGraphic" stdDeviation="28" result="blur3" />
                   <feMerge>
@@ -250,28 +282,28 @@ export default function ThirdSection() {
                     <feMergeNode in="SourceGraphic" />
                   </feMerge>
                 </filter>
-                
+
                 <linearGradient id="glass-gradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="rgba(255, 255, 255, 0.5)" />
-                  <stop offset="40%" stopColor="rgba(255, 255, 255, 0.15)" />
-                  <stop offset="100%" stopColor="rgba(255, 255, 255, 0.0)" />
+                  <stop offset="0%"   stopColor="rgba(255,255,255,0.5)" />
+                  <stop offset="40%"  stopColor="rgba(255,255,255,0.15)" />
+                  <stop offset="100%" stopColor="rgba(255,255,255,0.0)" />
                 </linearGradient>
 
                 <radialGradient id="bg-glow" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="rgba(52, 211, 153, 0.05)" />
-                  <stop offset="100%" stopColor="rgba(255, 255, 255, 0)" />
+                  <stop offset="0%"   stopColor="rgba(52,211,153,0.05)" />
+                  <stop offset="100%" stopColor="rgba(255,255,255,0)" />
                 </radialGradient>
               </defs>
 
               <circle cx="400" cy="400" r="400" fill="url(#bg-glow)" />
 
-              <g stroke="rgba(255, 255, 255, 0.08)" strokeWidth="1" fill="none">
+              <g stroke="rgba(255,255,255,0.08)" strokeWidth="1" fill="none">
                 <circle cx="400" cy="400" r="150" className="radar-ring ring-1" />
                 <circle cx="400" cy="400" r="250" className="radar-ring ring-2" />
                 <circle cx="400" cy="400" r="350" className="radar-ring ring-3" />
               </g>
 
-              <g stroke="rgba(255, 255, 255, 0.03)" strokeWidth="1" fill="none">
+              <g stroke="rgba(255,255,255,0.03)" strokeWidth="1" fill="none">
                 <circle cx="400" cy="400" r="150" />
                 <circle cx="400" cy="400" r="250" />
                 <circle cx="400" cy="400" r="350" />
@@ -291,10 +323,9 @@ export default function ThirdSection() {
                 strokeWidth="8"
                 strokeLinecap="round"
                 filter="url(#premium-glow)"
-                pathLength="100" 
+                pathLength="100"
                 className="arrow-line"
               />
-              
               <path
                 d="M 550 115 L 605 105 L 590 160"
                 fill="none"
@@ -314,80 +345,97 @@ export default function ThirdSection() {
   );
 }
 
-// ─── Section-local styles ─────────────────────────────────────────────────────
+// ─── Styles ───────────────────────────────────────────────────────────────────
 const S = {
   section: {
     position: "relative",
     minHeight: "100vh",
     display: "flex",
     alignItems: "center",
-    background: "#03030a", // Deep space black
+    background: "#03030a",
     borderTop: "1px solid rgba(255,255,255,0.04)",
     padding: "6rem 0",
     overflow: "hidden",
-    fontFamily: "'Plus Jakarta Sans', sans-serif",
+    // Promote to its own compositor layer so scroll never triggers a repaint
+    isolation: "isolate",
   },
+
+  // Eyebrow — cyan, uppercase, matches Hero label token exactly
   eyebrow: {
-    fontSize: 12,
+    fontSize: 11,
+    fontWeight: 700,
     letterSpacing: "0.25em",
     textTransform: "uppercase",
+    color: "#00f5ff",
+    textShadow: "0 0 14px rgba(0,245,255,0.45)",
     marginBottom: "1.2rem",
+    marginTop: 0,
     display: "block",
-    color: "#34d399",
-    fontWeight: 700,
   },
+
+  // H2 — Hero weight (800) + tracking (-0.03em) + line-height (1.05)
   h2: {
     fontSize: "clamp(2.4rem, 4.5vw, 3.8rem)",
-    fontWeight: 300,
-    lineHeight: 1.1,
+    fontWeight: 800,
+    lineHeight: 1.05,
     letterSpacing: "-0.03em",
     marginBottom: "1.5rem",
     marginTop: 0,
     color: "#ffffff",
+    textShadow:
+      "0 2px 4px rgba(0,0,0,0.95), 0 4px 32px rgba(0,0,0,0.80)",
   },
-  h2Gradient: {
-    background: "linear-gradient(90deg, #ffffff 0%, #818cf8 100%)",
-    WebkitBackgroundClip: "text",
-    WebkitTextFillColor: "transparent",
-    fontWeight: 500,
+
+  // Second line of H2 — white, same weight, slight opacity to match Hero "sub" pattern
+  h2Accent: {
+    color: "rgba(255,255,255,0.55)",
+    fontWeight: 800,
   },
+
+  // Body — Hero body token exactly
   body: {
-    fontSize: "clamp(1rem, 1.2vw, 1.1rem)",
-    color: "rgba(255,255,255,0.5)",
+    fontSize: "clamp(0.95rem, 1.4vw, 1.1rem)",
+    fontWeight: 400,
+    lineHeight: 1.75,
+    letterSpacing: "0.005em",
+    color: "rgba(255,255,255,0.60)",
     marginBottom: "3rem",
-    lineHeight: 1.7,
-    fontWeight: 300,
+    marginTop: 0,
+    maxWidth: 480,
   },
+
   grid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, 1fr)",
-    gap: 16,
+    gap: 14,
   },
+
+  // Stat box — removed backdrop-filter (scroll jank source)
   statBox: {
-    border: "1px solid rgba(255,255,255,0.04)",
-    borderRadius: 16,
-    // Deeper glassmorphism to contrast the moving grid
-    background: "rgba(10, 10, 15, 0.4)",
-    backdropFilter: "blur(12px)",
-    WebkitBackdropFilter: "blur(12px)",
-    padding: "2rem 1.6rem",
+    border: "1px solid rgba(255,255,255,0.06)",
+    borderRadius: 14,
+    background: "rgba(255,255,255,0.03)",
+    padding: "1.8rem 1.5rem",
     textAlign: "left",
-    boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
     cursor: "default",
   },
+
+  // Stat number — Hero weight, glow from currentColor
   statNum: {
-    fontSize: "clamp(2rem, 3.5vw, 2.6rem)",
-    fontWeight: 400,
+    fontSize: "clamp(1.8rem, 3vw, 2.4rem)",
+    fontWeight: 800,
     letterSpacing: "-0.04em",
     lineHeight: 1,
-    textShadow: "0 0 16px currentColor", // Makes the numbers softly glow
+    textShadow: "0 0 18px currentColor",
   },
+
+  // Stat label — Hero uppercase label token
   statLbl: {
-    fontSize: 11,
-    color: "rgba(255,255,255,0.4)",
-    marginTop: 12,
-    letterSpacing: "0.15em",
+    fontSize: 10,
+    fontWeight: 700,
+    letterSpacing: "0.20em",
     textTransform: "uppercase",
-    fontWeight: 600,
+    color: "rgba(255,255,255,0.40)",
+    marginTop: 10,
   },
 };

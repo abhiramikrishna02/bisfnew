@@ -1,52 +1,45 @@
 // Home.jsx
-
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
 
-// ─── Section imports ───────────────────────────────────────────────────────────
+// ─── Section imports ──────────────────────────────────────────────────────────
 import Hero,         { HERO_CFG } from "./Hero";
 import SecondSection from "./SecondSection";
 import ThirdSection  from "./ThirdSection";
 import FourthSection from "./FourthSection";
+import TextSection from "./TextSection";
 import FinalSection  from "./FinalSection";
+import Navbar        from "./Navbar";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-// ✅ FIX 1: Reduced from 8 → 2 so only 2 scroll steps are needed to leave the hero
 const ASSEMBLY_TICKS = 2;
 
 const NAV_DOTS   = ["hero", "services", "impact", "process", "contact"];
-const DOT_COLORS = ["#00f5ff", "#818cf8", "#34d399", "#f9a8d4", "#ff2ebe"];
+const DOT_COLORS = ["#00f5ff", "#00f5ff", "#00e676", "#00f5ff", "#00e676"];
 
 // ─── Home (Orchestrator) ──────────────────────────────────────────────────────
-// Owns: phase state, animation refs, scroll/touch/key listeners, navbar, nav dots.
-// Does NOT own: section UI, canvas drawing, styles — all delegated to children.
 export default function Home() {
-  // phase: "hero" | "forward-transition" | "scrollable" | "back-flash"
   const [phase,          setPhase]          = useState("hero");
   const [contentVisible, setContentVisible] = useState(true);
   const [activeSection,  setActiveSection]  = useState("hero");
-  // Used to force re-renders when tick/scroll-hint state changes
   const [, forceRender] = useState(0);
 
-  // Animation values — refs so RAF loop reads without stale closures
   const assembleProgress = useRef(0);
   const zoomProgress     = useRef(0);
   const assembleTarget   = useRef(0);
   const zoomTarget       = useRef(0);
-  const internalTick     = useRef(0); // current scroll step (0–ASSEMBLY_TICKS)
+  const internalTick     = useRef(0);
   const isTransitioning  = useRef(false);
 
-  // Kept for Hero prop API compatibility (Hero no longer uses them)
   const canvasRef = useRef(null);
   const fragsRef  = useRef([]);
 
-  // Scroll intercept accumulators
   const scrollAccum = useRef(0);
   const lastScroll  = useRef(0);
   const touchStart  = useRef(null);
 
-  // ── Smooth interpolation loop for assembly / zoom values ─────────────────
+  // ── Smooth interpolation loop ─────────────────────────────────────────────
   useEffect(() => {
     let raf;
     function tick() {
@@ -84,9 +77,6 @@ export default function Home() {
       setPhase("scrollable");
       setActiveSection("services");
 
-      // ✅ FIX 2: No teleport jump — just make sections visible and let the
-      // browser scroll naturally. We reset to top-of-page so the user scrolls
-      // down into #services the normal way, no jarring position warp.
       requestAnimationFrame(() => {
         window.scrollTo({ top: 0, behavior: "instant" });
         setTimeout(() => {
@@ -220,7 +210,7 @@ export default function Home() {
     };
   }, [phase, handleHeroScroll, handleServicesUp]);
 
-  // ── IntersectionObserver for dot highlights in scrollable phase ───────────
+  // ── IntersectionObserver for dot highlights ───────────────────────────────
   useEffect(() => {
     if (phase !== "scrollable") return;
     const ids = ["services", "impact", "process", "contact"];
@@ -237,7 +227,7 @@ export default function Home() {
     return () => observers.forEach(o => o && o.disconnect());
   }, [phase]);
 
-  // ── Nav helpers ───────────────────────────────────────────────────────────
+  // ── Nav jump helper ───────────────────────────────────────────────────────
   const jumpTo = useCallback((id) => {
     if (id === "hero") {
       if (phase === "scrollable") { doBackToHero(); return; }
@@ -253,7 +243,7 @@ export default function Home() {
   return (
     <div style={{ fontFamily: "'Inter', system-ui, sans-serif", color: "#fff" }}>
 
-      {/* ── BLACK FLASH overlay (back-navigation) ── */}
+      {/* ── BLACK FLASH overlay ── */}
       <div style={{
         position: "fixed", inset: 0, zIndex: 900,
         background: "#03030a",
@@ -262,7 +252,7 @@ export default function Home() {
         transition: "opacity 0.18s ease",
       }} />
 
-      {/* ── HERO (Prism background + text + scroll hint) ── */}
+      {/* ── HERO ── */}
       <Hero
         canvasRef={canvasRef}
         fragsRef={fragsRef}
@@ -284,27 +274,12 @@ export default function Home() {
         <SecondSection />
         <ThirdSection />
         <FourthSection />
+        <TextSection/>
         <FinalSection />
       </div>
 
-      {/* ── NAVBAR ── */}
-      <header style={S.navbar}>
-        <span style={S.navBrand}>BISF</span>
-        <div style={{ display: "flex", gap: 32 }}>
-          {[["Home", "hero"], ["Services", "services"], ["Contact", "contact"]].map(([label, id]) => (
-            <button
-              key={label}
-              onClick={() => jumpTo(id)}
-              style={{
-                ...S.navBtn,
-                color: activeSection === id ? "#fff" : "rgba(255,255,255,0.32)",
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </header>
+      {/* ── NAVBAR (extracted component) ── */}
+      <Navbar activeSection={activeSection} jumpTo={jumpTo} />
 
       {/* ── NAV DOTS ── */}
       <div style={S.dots}>
@@ -312,10 +287,11 @@ export default function Home() {
           <button
             key={id}
             onClick={() => jumpTo(id)}
+            aria-label={`Go to ${id}`}
             style={{
               ...S.dot,
               background: activeSection === id ? DOT_COLORS[i] : "rgba(255,255,255,0.18)",
-              boxShadow: activeSection === id ? `0 0 8px ${DOT_COLORS[i]}` : "none",
+              boxShadow:  activeSection === id ? `0 0 8px ${DOT_COLORS[i]}` : "none",
             }}
           />
         ))}
@@ -325,31 +301,25 @@ export default function Home() {
   );
 }
 
-// ─── Home-local styles (navbar + dots only) ───────────────────────────────────
+// ─── Home-local styles (dots only — navbar moved to Navbar.jsx) ───────────────
 const S = {
-  navbar: {
-    position: "fixed", top: 0, left: 0, width: "100%", zIndex: 800,
-    height: 58, display: "flex", alignItems: "center", justifyContent: "space-between",
-    padding: "0 2rem",
-    borderBottom: "1px solid rgba(255,255,255,0.05)",
-    background: "rgba(3,3,10,0.7)",
-    backdropFilter: "blur(16px)",
-  },
-  navBrand: {
-    fontSize: 13, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 500,
-  },
-  navBtn: {
-    fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase",
-    background: "none", border: "none", cursor: "pointer", fontFamily: "inherit",
-    transition: "color 0.4s",
-  },
   dots: {
-    position: "fixed", right: "1.6rem", top: "50%", transform: "translateY(-50%)",
-    display: "flex", flexDirection: "column", gap: 12, zIndex: 800,
+    position: "fixed",
+    right: "1.6rem",
+    top: "50%",
+    transform: "translateY(-50%)",
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+    zIndex: 800,
   },
   dot: {
-    width: 6, height: 6, borderRadius: "50%", border: "none",
-    padding: 0, cursor: "pointer",
+    width: 6,
+    height: 6,
+    borderRadius: "50%",
+    border: "none",
+    padding: 0,
+    cursor: "pointer",
     transition: "background 0.4s, box-shadow 0.4s",
   },
 };
