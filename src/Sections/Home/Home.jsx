@@ -7,6 +7,7 @@ import SecondSection from "./SecondSection";
 import ThirdSection from "./ThirdSection";
 import FourthSection from "./FourthSection";
 import Wavesection from "./Wavesection";
+import Birdsection from "./Ribbonsection";
 import Toposection  from "./Toposection";
 import TextSection from "./TextSection";
 import FinalSection from "./FinalSection";
@@ -71,6 +72,7 @@ export default function Home() {
         <ThirdSection />
         <FourthSection />
         <Wavesection />
+        <Birdsection />
         <Toposection />
         <TextSection />
         <FinalSection />
