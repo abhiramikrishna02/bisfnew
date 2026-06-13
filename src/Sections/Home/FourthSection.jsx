@@ -56,8 +56,8 @@ function useDollarRain(mountRef) {
     let H = mount.clientHeight;
     if (!W || !H) return;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.25));
     renderer.setSize(W, H);
     renderer.setClearColor(0x000000, 0);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -109,9 +109,9 @@ function useDollarRain(mountRef) {
     const extrudeSettings = {
       depth: 0.28,
       bevelEnabled: true,
-      bevelThickness: 0.06,
-      bevelSize: 0.04,
-      bevelSegments: 4,
+      bevelThickness: 0.05,
+      bevelSize: 0.035,
+      bevelSegments: 2,
     };
 
     const dollarGeo = new THREE.ExtrudeGeometry(dollarShape, extrudeSettings);
@@ -150,11 +150,11 @@ function useDollarRain(mountRef) {
       );
 
       group.userData = {
-        fallSpeed: 0.012 + Math.random() * 0.022,
-        tumbleX:   (Math.random() - 0.5) * 0.022,
-        tumbleY:   (Math.random() - 0.5) * 0.018,
-        tumbleZ:   (Math.random() - 0.5) * 0.010,
-        driftX:    (Math.random() - 0.5) * 0.004,
+        fallSpeed: 0.010 + Math.random() * 0.018,
+        tumbleX:   (Math.random() - 0.5) * 0.018,
+        tumbleY:   (Math.random() - 0.5) * 0.015,
+        tumbleZ:   (Math.random() - 0.5) * 0.008,
+        driftX:    (Math.random() - 0.5) * 0.003,
         spawnY:    SPAWN_H * 0.6 + Math.random() * 1.5,
         resetY:   -SPAWN_H * 0.55,
         resetX:    (Math.random() - 0.5) * SPAWN_W,

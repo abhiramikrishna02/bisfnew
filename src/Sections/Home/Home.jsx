@@ -6,6 +6,8 @@ import Hero from "./Hero";
 import SecondSection from "./SecondSection";
 import ThirdSection from "./ThirdSection";
 import FourthSection from "./FourthSection";
+import Wavesection from "./Wavesection";
+import Toposection  from "./Toposection";
 import TextSection from "./TextSection";
 import FinalSection from "./FinalSection";
 import Navbar from "./Navbar";
@@ -68,6 +70,8 @@ export default function Home() {
         <SecondSection />
         <ThirdSection />
         <FourthSection />
+        <Wavesection />
+        <Toposection />
         <TextSection />
         <FinalSection />
       </div>

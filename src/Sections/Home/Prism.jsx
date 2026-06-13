@@ -47,7 +47,7 @@ const Prism = ({
     const HOVSTR = Math.max(0, hoverStrength || 1);
     const INERT = Math.max(0, Math.min(1, inertia || 0.12));
 
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const dpr = Math.min(1.5, window.devicePixelRatio || 1);
     const renderer = new Renderer({
       dpr,
       alpha: transparent,
@@ -348,7 +348,7 @@ const Prism = ({
       const io = new IntersectionObserver((entries) => {
         const vis = entries.some((e) => e.isIntersecting);
         if (vis) startRAF(); else stopRAF();
-      });
+      }, { rootMargin: "200px 0px" });
       io.observe(container);
       startRAF();
       container.__prismIO = io;
