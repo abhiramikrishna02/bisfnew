@@ -27,7 +27,8 @@ export default function ThirdSection() {
       ([entry]) => {
         setInView(entry.isIntersecting);
       },
-      { rootMargin: "200px 0px" }
+      // Trigger slightly earlier to ensure animations start smoothly before user fully arrives
+      { rootMargin: "400px 0px" } 
     );
 
     io.observe(section);
@@ -46,6 +47,7 @@ export default function ThirdSection() {
           pointer-events: none;
           /* GPU layer so the animation never paints on the main thread */
           will-change: transform;
+          transform: translateZ(0);
         }
 
         .animated-data-grid {
@@ -129,6 +131,8 @@ export default function ThirdSection() {
           max-width: 700px;
           height: auto;
           overflow: visible;
+          /* Hardware acceleration hint */
+          transform: translateZ(0); 
         }
 
         /* ── SVG animations — UNTOUCHED ── */
@@ -229,6 +233,7 @@ export default function ThirdSection() {
           .radar-ring { animation: none; }
         }
 
+        /* THIS is what handles performance out-of-view now */
         #impact[data-active="false"] .bg-graph-wrapper,
         #impact[data-active="false"] .animated-data-grid,
         #impact[data-active="false"] .data-stream,
@@ -240,19 +245,17 @@ export default function ThirdSection() {
         }
       `}</style>
 
-      {/* ── Background: animated graph grid ── */}
-      {inView && (
-        <div className="bg-graph-wrapper">
-          <div className="animated-data-grid" />
-          <div className="data-stream stream-1" />
-          <div className="data-stream stream-2" />
-          <div style={{
-            position: "absolute",
-            inset: 0,
-            background: "radial-gradient(circle at center, transparent 10%, #03030a 80%)",
-          }} />
-        </div>
-      )}
+      {/* ── Background: animated graph grid (ALWAYS MOUNTED) ── */}
+      <div className="bg-graph-wrapper">
+        <div className="animated-data-grid" />
+        <div className="data-stream stream-1" />
+        <div className="data-stream stream-2" />
+        <div style={{
+          position: "absolute",
+          inset: 0,
+          background: "radial-gradient(circle at center, transparent 10%, #03030a 80%)",
+        }} />
+      </div>
 
       <div className="impact-container">
 
@@ -288,78 +291,76 @@ export default function ThirdSection() {
           </div>
         </div>
 
-        {/* ── Right: animated SVG graph — UNTOUCHED ── */}
+        {/* ── Right: animated SVG graph (ALWAYS MOUNTED) — UNTOUCHED ── */}
         <div className="impact-visual">
-          {inView && (
-            <svg viewBox="0 0 800 800" className="growth-svg" preserveAspectRatio="xMidYMid meet">
-              <defs>
-                <filter id="premium-glow" x="-50%" y="-50%" width="200%" height="200%">
-                  <feGaussianBlur in="SourceGraphic" stdDeviation="4"  result="blur1" />
-                  <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur2" />
-                  <feGaussianBlur in="SourceGraphic" stdDeviation="28" result="blur3" />
-                  <feMerge>
-                    <feMergeNode in="blur3" />
-                    <feMergeNode in="blur2" />
-                    <feMergeNode in="blur1" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
+          <svg viewBox="0 0 800 800" className="growth-svg" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <filter id="premium-glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="4"  result="blur1" />
+                <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur2" />
+                <feGaussianBlur in="SourceGraphic" stdDeviation="28" result="blur3" />
+                <feMerge>
+                  <feMergeNode in="blur3" />
+                  <feMergeNode in="blur2" />
+                  <feMergeNode in="blur1" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
 
-                <linearGradient id="glass-gradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"   stopColor="rgba(255,255,255,0.5)" />
-                  <stop offset="40%"  stopColor="rgba(255,255,255,0.15)" />
-                  <stop offset="100%" stopColor="rgba(255,255,255,0.0)" />
-                </linearGradient>
+              <linearGradient id="glass-gradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"   stopColor="rgba(255,255,255,0.5)" />
+                <stop offset="40%"  stopColor="rgba(255,255,255,0.15)" />
+                <stop offset="100%" stopColor="rgba(255,255,255,0.0)" />
+              </linearGradient>
 
-                <radialGradient id="bg-glow" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%"   stopColor="rgba(52,211,153,0.05)" />
-                  <stop offset="100%" stopColor="rgba(255,255,255,0)" />
-                </radialGradient>
-              </defs>
+              <radialGradient id="bg-glow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%"   stopColor="rgba(52,211,153,0.05)" />
+                <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+              </radialGradient>
+            </defs>
 
-              <circle cx="400" cy="400" r="400" fill="url(#bg-glow)" />
+            <circle cx="400" cy="400" r="400" fill="url(#bg-glow)" />
 
-              <g stroke="rgba(255,255,255,0.08)" strokeWidth="1" fill="none">
-                <circle cx="400" cy="400" r="150" className="radar-ring ring-1" />
-                <circle cx="400" cy="400" r="250" className="radar-ring ring-2" />
-                <circle cx="400" cy="400" r="350" className="radar-ring ring-3" />
-              </g>
+            <g stroke="rgba(255,255,255,0.08)" strokeWidth="1" fill="none">
+              <circle cx="400" cy="400" r="150" className="radar-ring ring-1" />
+              <circle cx="400" cy="400" r="250" className="radar-ring ring-2" />
+              <circle cx="400" cy="400" r="350" className="radar-ring ring-3" />
+            </g>
 
-              <g stroke="rgba(255,255,255,0.03)" strokeWidth="1" fill="none">
-                <circle cx="400" cy="400" r="150" />
-                <circle cx="400" cy="400" r="250" />
-                <circle cx="400" cy="400" r="350" />
-              </g>
+            <g stroke="rgba(255,255,255,0.03)" strokeWidth="1" fill="none">
+              <circle cx="400" cy="400" r="150" />
+              <circle cx="400" cy="400" r="250" />
+              <circle cx="400" cy="400" r="350" />
+            </g>
 
-              <g stroke="rgba(255,255,255,0.25)" strokeWidth="1">
-                <rect x="180" y="550" width="70" height="150" rx="8" fill="url(#glass-gradient)" className="glass-bar bar-1" />
-                <rect x="300" y="440" width="70" height="260" rx="8" fill="url(#glass-gradient)" className="glass-bar bar-2" />
-                <rect x="420" y="280" width="70" height="420" rx="8" fill="url(#glass-gradient)" className="glass-bar bar-3" />
-                <rect x="540" y="100" width="70" height="600" rx="8" fill="url(#glass-gradient)" className="glass-bar bar-4" />
-              </g>
+            <g stroke="rgba(255,255,255,0.25)" strokeWidth="1">
+              <rect x="180" y="550" width="70" height="150" rx="8" fill="url(#glass-gradient)" className="glass-bar bar-1" />
+              <rect x="300" y="440" width="70" height="260" rx="8" fill="url(#glass-gradient)" className="glass-bar bar-2" />
+              <rect x="420" y="280" width="70" height="420" rx="8" fill="url(#glass-gradient)" className="glass-bar bar-3" />
+              <rect x="540" y="100" width="70" height="600" rx="8" fill="url(#glass-gradient)" className="glass-bar bar-4" />
+            </g>
 
-              <path
-                d="M 120 620 C 280 600, 400 350, 600 110"
-                fill="none"
-                stroke="#ffffff"
-                strokeWidth="8"
-                strokeLinecap="round"
-                filter="url(#premium-glow)"
-                pathLength="100"
-                className="arrow-line"
-              />
-              <path
-                d="M 550 115 L 605 105 L 590 160"
-                fill="none"
-                stroke="#ffffff"
-                strokeWidth="8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                filter="url(#premium-glow)"
-                className="arrow-head"
-              />
-            </svg>
-          )}
+            <path
+              d="M 120 620 C 280 600, 400 350, 600 110"
+              fill="none"
+              stroke="#ffffff"
+              strokeWidth="8"
+              strokeLinecap="round"
+              filter="url(#premium-glow)"
+              pathLength="100"
+              className="arrow-line"
+            />
+            <path
+              d="M 550 115 L 605 105 L 590 160"
+              fill="none"
+              stroke="#ffffff"
+              strokeWidth="8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              filter="url(#premium-glow)"
+              className="arrow-head"
+            />
+          </svg>
         </div>
 
       </div>
